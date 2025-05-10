@@ -60,19 +60,14 @@ def kkjmah_manual_test():
     log_reg = LogisticRegression(max_iter=200)
     rf_clf = RandomForestClassifier(random_state=42)
 
-    # Logistic Regression
-    log_scores = cross_val_score(log_reg, X_train_scaled, y_train, cv=4)
-    print(f"Logistic Regression CV Accuracy: {log_scores.mean():.4f}")
-
-    # Random Forest
-    rf_scores = cross_val_score(rf_clf, X_train, y_train, cv=4)  # No scaling needed
-    print(f"Random Forest CV Accuracy: {rf_scores.mean():.4f}")
-
     log_reg.fit(X_train_scaled, y_train)
     y_pred_log = log_reg.predict(X_test_scaled)
 
     rf_clf.fit(X_train, y_train)
     y_pred_rf = rf_clf.predict(X_test)
+
+    print("Feature names:", load_iris().feature_names)
+    print("Feature importances:", rf_clf.feature_importances_)
 
     # Random guessing for reference
     y_pred_rng = numpy.array(random.choices([0, 1, 2], k=len(y_test)))
@@ -83,9 +78,9 @@ def kkjmah_manual_test():
     print(f"{y_pred_rf} - Random Forest")
     print(f"{y_pred_rng} - Random Guessing")
 
-    print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_log))
-    print("Random Forest Accuracy:", accuracy_score(y_test, y_pred_rf))
-    print("Random Guessing Accuracy:", accuracy_score(y_test, y_pred_rng))
+    print("Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_log)*100, "%")
+    print("Random Forest Accuracy:", accuracy_score(y_test, y_pred_rf)*100, "%")
+    print("Random Guessing Accuracy:", accuracy_score(y_test, y_pred_rng)*100, "%")
 
     print("\nClassification Report for Logistic Regression:\n", classification_report(y_test, y_pred_log))
     print("\nClassification Report for Random Forest:\n", classification_report(y_test, y_pred_rf))
@@ -95,23 +90,30 @@ def kkjmah_manual_test():
 def kkjmah_automatic_test_log_reg():
     max_iters = [20, 50, 100, 200, 500]
     output_file = open("log_reg_results.txt", "w")
-    (_, y_train), (_, _), (X_train_scaled, _) = load_and_split_iris_data()
+    (_, y_train), (_, y_test), (X_train_scaled, X_test_scaled) = load_and_split_iris_data()
     for max_iter in max_iters:
         log_reg = LogisticRegression(max_iter=max_iter)
-        log_scores = cross_val_score(log_reg, X_train_scaled, y_train, cv=4)
-        output_file.write(f"{max_iter} {log_scores.mean()}\n")
+
+        log_reg.fit(X_train_scaled, y_train)
+        y_pred_log = log_reg.predict(X_test_scaled)
+
+        output_file.write(f"{max_iter} {accuracy_score(y_test, y_pred_log)*100}%\n")
+        # "Logistic Regression Accuracy:", accuracy_score(y_test, y_pred_log)*100, "%"
     output_file.close()
 
 def kkjmah_automatic_test_rf_clf():
     numbers_of_estimators = [1, 2, 3, 5, 10, 50, 100, 200, 500]
     output_file = open("rf_clf_results.txt", "w")
-    (X_train, y_train), (_, _), (_, _) = load_and_split_iris_data()
+    (X_train, y_train), (X_test, y_test), (_, _) = load_and_split_iris_data()
     for n_of_estimators in numbers_of_estimators:
         rf_clf = RandomForestClassifier(n_estimators=n_of_estimators, random_state=42)
-        log_scores = cross_val_score(rf_clf, X_train, y_train, cv=4)
-        output_file.write(f"{n_of_estimators} {log_scores.mean()}\n")
+        rf_clf.fit(X_train, y_train)
+        y_pred_log = rf_clf.predict(X_test)
+
+        output_file.write(f"{n_of_estimators} {accuracy_score(y_test, y_pred_log)*100}%\n")
     output_file.close()
 
 if __name__ == "__main__":
     kkjmah_automatic_test_log_reg()
     kkjmah_automatic_test_rf_clf()
+    kkjmah_manual_test()
